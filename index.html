@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="AML Operations — interactive transaction-monitoring and risk scenario prototype">
+<title>AML Operations</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f5f2eb;--rail:#f0ece4;--surface:#fffcf7;--alt:#f8f5ef;--line:#ded8cd;
+  --text:#191d19;--muted:#6f756f;--subtle:#969a94;--green:#145339;--green-ink:#fff;
+  --green-soft:#e2eee5;--forest-border:#abcdb9;--amber:#986221;--amber-soft:#f7e9d1;
+  --red:#a44e4e;--red-soft:#f9e7e4;--bar-muted:#b8b7b0;--grid:#e8e4dc;
+  --shadow:0 9px 26px rgba(25,35,28,.025)
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101211;--rail:#171917;--surface:#1b1e1b;--alt:#222622;--line:#353b35;
+  --text:#f4f3ee;--muted:#b1b8b0;--subtle:#868e85;--green:#a3cdb1;--green-ink:#14251a;
+  --green-soft:#22362b;--forest-border:#42624e;--amber:#e5b779;--amber-soft:#392b1c;
+  --red:#ecaaa6;--red-soft:#3c2826;--bar-muted:#6d776c;--grid:#303730;
+  --shadow:none
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}
+button{cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+button:disabled{cursor:default;opacity:.45}
+.app{display:grid;grid-template-columns:246px minmax(0,1fr);min-height:100vh}
+.sidebar{background:var(--rail);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;padding:30px 16px 19px;display:flex;flex-direction:column;gap:42px;z-index:5}
+.brand{padding:0 14px;display:flex;align-items:center;gap:13px}
+.logo{flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;color:var(--green)}
+.logo svg{width:42px;height:42px;display:block}
+.brandname{font-size:17px;font-weight:800;letter-spacing:-.06em;line-height:1.08;white-space:nowrap}
+.brandtag{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin-top:7px}
+.nav{display:grid;gap:9px}
+.navbtn{display:flex;align-items:center;gap:13px;width:100%;min-height:64px;padding:13px 15px;border:1px solid transparent;background:none;color:var(--muted);border-radius:14px;text-align:left}
+.navbtn:hover{background:var(--alt)}
+.navbtn.active{background:var(--surface);border-color:var(--line);color:var(--text)}
+.navno{font-size:13px;letter-spacing:.03em;font-weight:700;color:var(--subtle);width:25px}
+.navbtn.active .navno{color:var(--green)}
+.navlabel{font-size:14px;font-weight:650;letter-spacing:-.025em;line-height:1.25}
+.sidefoot{margin-top:auto;border-top:1px solid var(--line);padding:19px 8px 0}
+.model-state{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin:0 5px 17px}
+.state-dot{width:7px;height:7px;background:var(--green);border-radius:50%}
+.toolrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toolbtn{height:48px;background:var(--surface);border:1px solid var(--line);border-radius:13px;color:var(--text);font-size:21px;display:flex;align-items:center;justify-content:center;gap:8px}
+.toolbtn:hover{border-color:var(--green)}
+.toolbtn span{font-size:11px;font-weight:700;letter-spacing:.01em}
+.main{min-width:0;padding:31px 34px 38px}
+.page{max-width:1490px;margin:auto}
+.page[hidden]{display:none!important}
+.intro{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:30px 34px;margin-bottom:15px;display:flex;align-items:center;justify-content:space-between;gap:40px}
+.eyebrow{color:var(--green);letter-spacing:.17em;text-transform:uppercase;font-size:11px;font-weight:750;line-height:1.5}
+h1,h2,h3,p{margin-top:0}
+h1{font-size:clamp(32px,3vw,48px);line-height:1.05;letter-spacing:-.066em;font-weight:750;margin:9px 0 10px}
+.intro p,.section-sub{color:var(--muted);font-size:14px;line-height:1.5;margin:0}
+.intro p{max-width:680px}
+.intro-decoration{flex:0 0 160px;height:76px;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;gap:8px;opacity:.65}
+.intro-decoration i{height:9px;width:100%;background:var(--green);border-radius:99px;position:relative}
+.intro-decoration i:after{content:'';width:7px;height:7px;background:var(--surface);border:2px solid var(--green);position:absolute;border-radius:50%;right:-9px;top:-1px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:23px;padding:24px;min-width:0}
+.section-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;font-weight:750}
+.transaction{margin-bottom:15px;padding:24px 30px}
+.trans-line{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:17px}
+.trans-title{font-size:20px;font-weight:750;letter-spacing:-.05em;margin:5px 0 0}
+.trans-grid{display:grid;grid-template-columns:1.1fr .9fr .7fr .78fr 1.3fr;gap:14px;align-items:start}
+.trans-attribute{border-right:1px solid var(--line);padding:2px 10px 0 0;min-height:60px}
+.trans-attribute:last-child{border:0}
+.attr-label{color:var(--muted);font-size:11px;font-weight:620;margin-bottom:8px}
+.attr-value{font-size:20px;letter-spacing:-.045em;font-weight:760;font-variant-numeric:tabular-nums;line-height:1.2}
+.attr-value.compact{font-size:16px}
+.attr-sub{font-size:11px;color:var(--muted);margin-top:5px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.chip{font-size:11px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;line-height:1.25}
+.chip.active{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:670}
+.status{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:740}
+.status.alert{color:var(--amber);border-color:var(--amber);background:var(--amber-soft)}
+.status.clear{color:var(--green);border-color:var(--forest-border);background:var(--green-soft)}
+.workflow{padding:27px 30px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:17px}
+.panel-head h2{font-size:21px;letter-spacing:-.05em;margin:0;font-weight:740}
+.process{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px;margin-top:2px}
+.step{min-height:115px;background:var(--alt);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;gap:12px;justify-content:center;text-align:left;padding:17px 18px;color:var(--text)}
+.step:hover{border-color:var(--green)}
+.step.active{background:var(--green-soft);border-color:var(--forest-border)}
+.stepnum{font-size:25px;font-weight:720;line-height:1;letter-spacing:-.065em;color:var(--muted)}
+.step.active .stepnum{color:var(--green)}
+.stepname{font-size:15px;font-weight:700;line-height:1.25;letter-spacing:-.032em}
+.stage-content{margin-top:15px;padding:20px 22px;border-radius:16px;background:var(--alt);border:1px solid var(--line);min-height:130px}
+.stage-topline{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.stage-topline h3{font-size:20px;font-weight:760;letter-spacing:-.05em;margin:0}
+.stage-main{font-size:14px;color:var(--muted);margin:9px 0 0;line-height:1.6;max-width:930px}
+.indicator-reference{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:15px}
+.indicator-row{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:8px;opacity:.64}
+.indicator-row.is-active{opacity:1;border-color:var(--forest-border);background:var(--green-soft)}
+.indicator-name{font-size:11px;line-height:1.3}
+.indicator-weight{font-size:13px;font-weight:750;white-space:nowrap}
+@media(max-width:1280px){.indicator-reference{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.indicator-reference{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mathline{margin-top:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mathpiece{font-size:12px;padding:7px 9px;background:var(--surface);border:1px solid var(--line);border-radius:8px;white-space:nowrap}
+.math-total{font-size:14px;font-weight:790;color:var(--green);margin-left:5px}
+.nowrap{white-space:nowrap}
+.page-intro{margin:1px 0 21px}
+.page-intro h1{margin:8px 0 9px}
+.analysis-grid{display:grid;grid-template-columns:minmax(330px,.73fr) minmax(0,1.27fr);gap:16px;align-items:stretch}
+.controls{padding:23px;height:100%}
+.control-header{font-size:18px;font-weight:750;letter-spacing:-.045em;margin-bottom:16px}
+.preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:20px}
+.preset{display:flex;align-items:flex-start;justify-content:center;flex-direction:column;gap:7px;padding:14px;border-radius:13px;border:1px solid var(--line);background:var(--alt);color:var(--text);min-height:75px;text-align:left}
+.preset b{font-size:13px;line-height:1.2;letter-spacing:-.02em}
+.preset small{font-size:11px;color:var(--muted);line-height:1.35}
+.preset.active{background:var(--green-soft);border:1.5px solid var(--forest-border)}
+.preset.active b{color:var(--green)}
+.preset:hover{border-color:var(--green)}
+.controls-sep{height:1px;background:var(--line);margin:3px 0 19px}
+.range-group+.range-group{margin-top:24px}
+.range-header{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;font-weight:750}
+.range-val{color:var(--green);font-variant-numeric:tabular-nums;font-weight:800}
+.range-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:5px}
+input[type=range]{width:100%;height:30px;margin:10px 0 0;accent-color:var(--green);cursor:pointer;touch-action:none}
+.range-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--subtle)}
+.outcome{padding:23px;height:100%}
+.outcome .panel-head{margin-bottom:14px}
+.outcome .panel-head h2{font-size:18px}
+.result-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.result{padding:16px 14px;background:var(--alt);border:1px solid var(--line);border-radius:14px;min-height:104px}
+.result label{color:var(--muted);font-size:11px;display:block;line-height:1.4}
+.result b{display:block;font-size:29px;letter-spacing:-.066em;margin:9px 0 2px;line-height:1}
+.result small{color:var(--subtle);font-size:10px;line-height:1.3;display:block}
+.chartwrap{border:1px solid var(--line);border-radius:16px;background:var(--alt);padding:17px 18px 14px;margin-top:13px}
+.chart-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.chart-title strong{font-size:14px;letter-spacing:-.03em}
+.chart-hint{font-size:11px;color:var(--muted)}
+.chartplot{position:relative;height:180px;margin:8px 4px 0 4px;border-bottom:1px solid var(--line)}
+.chartgrid{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to top, transparent 0,transparent calc(25% - 1px),var(--grid) calc(25% - 1px),var(--grid) 25%);opacity:.62}
+.chartbars{position:absolute;inset:0;display:grid;grid-template-columns:repeat(20,minmax(0,1fr));align-items:stretch;gap:5px}
+.bucket{appearance:none;display:flex;align-items:flex-end;justify-content:center;position:relative;min-width:0;height:100%;padding:0 1px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:inherit}
+.bucket:before{content:'';position:absolute;left:50%;bottom:0;height:0;width:0}
+.bucket.selected:before{height:100%;width:1px;background:var(--green);opacity:.33}
+.bar{pointer-events:none;width:100%;max-width:24px;height:var(--height);display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden;background:var(--bar-muted)}
+.bar .low{display:block;width:100%;height:var(--low);background:var(--bar-muted)}
+.bar .high{display:block;width:100%;height:var(--high);background:var(--green)}
+.bucket:focus-visible{outline:2px solid var(--green);outline-offset:1px;z-index:3}
+.threshold-line{position:absolute;top:0;bottom:0;border-left:1px dashed var(--amber);pointer-events:none;z-index:2}
+.threshold-label{position:absolute;right:0;top:-17px;transform:translateX(50%);font-size:10px;font-weight:750;color:var(--amber);white-space:nowrap}
+.xaxis{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin:8px 3px 0}
+.chartfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}
+.legend{display:flex;gap:13px;align-items:center;color:var(--muted);font-size:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.readout{color:var(--text);font-size:12px;font-weight:730;font-variant-numeric:tabular-nums;white-space:nowrap}
+.interpret{display:flex;align-items:start;gap:13px;padding:17px 18px;background:var(--green-soft);border-radius:15px;margin-top:13px}
+.interpret .mark{font-size:17px;font-weight:750;color:var(--green)}
+.interpret p{font-size:12px;color:var(--text);line-height:1.5;margin:0}
+.interpret b{display:block;font-size:12px;margin-bottom:3px;color:var(--green)}
+.risk-kpis,.data-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);padding:19px;border-radius:17px}
+.kpi label{color:var(--muted);font-size:12px;display:block}
+.kpi strong{font-size:33px;letter-spacing:-.065em;display:block;margin:10px 0 3px}
+.kpi small{font-size:11px;color:var(--muted)}
+.risk-table{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.risk-row{display:grid;grid-template-columns:1.75fr .6fr .6fr .85fr 1.5fr;border-bottom:1px solid var(--line);align-items:center}
+.risk-row:last-child{border-bottom:0}
+.risk-row>div{padding:17px 16px;font-size:12px;line-height:1.45;color:var(--muted)}
+.risk-row .name{font-weight:740;color:var(--text);font-size:13px;display:block;margin-bottom:5px}
+.risk-row.head{background:var(--alt)}
+.risk-row.head>div{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:800}
+.risk-tag{display:inline-flex;font-size:11px;border-radius:8px;padding:7px 10px;font-weight:700;white-space:nowrap}
+.risk-tag.low{color:var(--green);background:var(--green-soft)}
+.risk-tag.moderate{color:var(--amber);background:var(--amber-soft)}
+.risk-tag.high{color:var(--red);background:var(--red-soft)}
+.risk-owner{font-size:12px;color:var(--text);font-weight:700;display:block;margin-bottom:5px}
+.data-tools{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:15px}
+.data-tools-left{min-width:0}
+.data-tools-left h2{font-size:19px;letter-spacing:-.04em;margin:0 0 5px}
+.data-tools-left small{color:var(--muted);font-size:12px}
+.buttons{display:flex;gap:9px;flex-wrap:wrap}
+.button{border:1px solid var(--line);border-radius:12px;min-height:45px;background:var(--surface);color:var(--text);font-size:12px;font-weight:730;padding:0 15px}
+.button.primary{background:var(--green);border-color:var(--green);color:var(--green-ink)}
+.button:hover{border-color:var(--green)}
+.filterbar{display:flex;align-items:center;gap:10px;margin:16px 0}
+.search{flex:1;min-width:120px;background:var(--alt);border:1px solid var(--line);border-radius:12px;padding:13px 15px;color:var(--text);font-size:13px;outline:none}
+.select{border:1px solid var(--line);border-radius:12px;padding:12px 12px;background:var(--alt);color:var(--text);min-height:47px;font-size:13px}
+.table-wrap{border:1px solid var(--line);border-radius:15px;overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:850px}th,td{text-align:left;border-bottom:1px solid var(--line);padding:13px 14px;font-size:12px;white-space:nowrap}th{background:var(--alt);color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.08em}td{color:var(--text)}tr:last-child td{border-bottom:0}
+.table-foot{font-size:12px;color:var(--muted);margin:13px 2px 0}
+.disclaimer{font-size:11px;color:var(--subtle);text-align:center;margin-top:18px}
+.toast{position:fixed;right:24px;bottom:20px;background:var(--text);color:var(--bg);padding:13px 19px;border-radius:11px;box-shadow:0 14px 35px #0002;font-size:13px;z-index:30;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:none}
+@media(max-width:1280px){.result-grid{grid-template-columns:repeat(2,1fr)}.trans-grid{grid-template-columns:repeat(4,1fr)}.trans-attribute:last-child{grid-column:1/-1;border-top:1px solid var(--line);padding-top:12px}.analysis-grid{grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr)}}
+@media(max-width:1000px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative;gap:16px;padding:15px}.nav{display:flex;flex-wrap:wrap}.navbtn{min-height:51px;flex:1;min-width:150px}.sidefoot{margin:0;display:flex;align-items:center;gap:12px;padding:0;border:0}.model-state{margin:0}.toolrow{display:flex}.toolbtn{min-width:64px;padding:0 10px}.main{padding:20px}.analysis-grid{grid-template-columns:1fr}.trans-grid{grid-template-columns:repeat(4,1fr)}.risk-row{grid-template-columns:1.7fr .6fr .6fr 1fr 1.3fr}}
+@media(max-width:700px){.main{padding:13px}.intro{padding:21px}.intro-decoration{display:none}.trans-grid{grid-template-columns:repeat(2,1fr)}.trans-attribute:nth-child(even){border:0}.trans-attribute:last-child{grid-column:1/-1}.process{grid-template-columns:repeat(5,minmax(135px,1fr));overflow-x:auto;padding-bottom:5px}.workflow,.transaction,.panel{padding:18px}.risk-kpis,.data-kpis{grid-template-columns:repeat(2,1fr)}.risk-table{overflow-x:auto}.risk-row{min-width:860px}.data-tools,.filterbar{align-items:stretch;flex-direction:column}.result-grid{grid-template-columns:repeat(2,1fr)}.chartbars{gap:2px}.chartfoot{flex-wrap:wrap}.page-intro h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo" aria-label="Signal monitoring logo"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="19" stroke="currentColor" stroke-width="2.5"/><circle cx="24" cy="24" r="11.5" stroke="currentColor" stroke-width="2" opacity=".42"/><circle cx="24" cy="24" r="3.5" fill="currentColor"/><path d="M24 24L38 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="10" r="3" fill="currentColor"/></svg></div><div><div class="brandname">AML Operations</div><div class="brandtag">Digital Twin Prototype</div></div></div>
+    <nav class="nav" aria-label="Sections">
+      <button class="navbtn active" data-page="overview"><span class="navno">01</span><span class="navlabel">Overview</span></button>
+      <button class="navbtn" data-page="threshold"><span class="navno">02</span><span class="navlabel">Threshold Analysis</span></button>
+      <button class="navbtn" data-page="risk"><span class="navno">03</span><span class="navlabel">Risk Register</span></button>
+      <button class="navbtn" data-page="data"><span class="navno">04</span><span class="navlabel">Dataset</span></button>
+    </nav>
+    <div class="sidefoot">
+      <div class="model-state"><i class="state-dot"></i> Model ready</div>
+      <div class="toolrow">
+        <button id="resetAll" class="toolbtn" title="Reset the entire model" aria-label="Reset the entire model">↺ <span>Reset</span></button>
+        <button id="themeToggle" class="toolbtn" title="Switch between light and dark mode" aria-label="Switch between light and dark mode">☾</button>
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <section class="page" id="page-overview">
+      <header class="page-intro"><h1>How AML monitoring works.</h1><p class="section-sub">A visual walkthrough from an incoming transaction to an analyst's review.</p></header>
+      <section class="panel transaction" aria-labelledby="transactionTitle">
+        <div class="trans-line"><div><span class="section-label">Example transaction</span><div id="transactionTitle" class="trans-title">Follow one record through the system.</div></div><span class="status alert" id="profileStatus">Alert</span></div>
+        <div class="trans-grid">
+          <div class="trans-attribute"><div class="attr-label">Transaction</div><div class="attr-value compact" id="profileId">—</div><div class="attr-sub" id="profileDate">—</div></div>
+          <div class="trans-attribute"><div class="attr-label">Amount</div><div class="attr-value" id="profileAmount">—</div><div class="attr-sub">JOD</div></div>
+          <div class="trans-attribute"><div class="attr-label">Country code</div><div class="attr-value" id="profileCountry">—</div></div>
+          <div class="trans-attribute"><div class="attr-label">Monitoring score</div><div class="attr-value" id="profileScore">—</div><div class="attr-sub" id="profileThreshold">—</div></div>
+          <div class="trans-attribute"><div class="attr-label">Risk indicators <span style="color:var(--amber)">●</span> active</div><div class="chips" id="profileChips"></div></div>
+        </div>
+      </section>
+      <section class="panel workflow" aria-labelledby="flowTitle">
+        <div class="panel-head"><h2 id="flowTitle">Transaction monitoring workflow</h2></div>
+        <div class="process" id="process"></div>
+        <div class="stage-content" aria-live="polite" id="stageContent"></div>
+      </section>
+    </section>
+    <section class="page" id="page-threshold" hidden>
+      <header class="page-intro"><h1>The detection trade-off.</h1><p class="section-sub">Test how sensitivity and review capacity affect the monitoring operation.</p></header>
+      <div class="analysis-grid">
+        <section class="panel controls"><div class="control-header">Choose a scenario</div>
+          <div class="preset-grid" id="presetGrid"></div>
+          <div class="controls-sep"></div>
+          <div class="control-header">Adjust controls</div>
+          <div class="range-group"><div class="range-header"><span>Alert threshold</span><span class="range-val" id="thresholdValue">55 / 100</span></div><div class="range-note">Lower = more sensitive · Higher = fewer alerts</div><input id="thresholdInput" type="range" min="30" max="85" value="55"><div class="range-ends"><span>30</span><span>85</span></div></div>
+          <div class="range-group"><div class="range-header"><span>Review capacity</span><span class="range-val" id="capacityValue">45 / cycle</span></div><div class="range-note">Maximum alerts reviewed in one cycle</div><input id="capacityInput" type="range" min="20" max="70" value="45"><div class="range-ends"><span>20</span><span>70</span></div></div>
+        </section>
+        <section class="panel outcome"><div class="panel-head"><h2>Operational outcome</h2><span class="status" id="scenarioLabel">Baseline</span></div>
+          <div class="result-grid" id="results"></div>
+          <div class="chartwrap"><div class="chart-title"><strong>Score distribution</strong><span class="chart-hint">Tap a bar to inspect</span></div>
+            <div class="chartplot" id="chartPlot"><div class="chartgrid"></div><div class="chartbars" id="histogram"></div><div class="threshold-line" id="thresholdLine"><span class="threshold-label" id="thresholdMarker">T 55</span></div></div>
+            <div class="xaxis"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+            <div class="chartfoot"><div class="legend"><span><i style="background:var(--bar-muted)"></i>Below threshold</span><span><i style="background:var(--green)"></i>At or above</span></div><span class="readout" id="bucketReadout">—</span></div>
+          </div>
+          <div class="interpret"><span class="mark">↗</span><div><b>Management insight</b><p id="insight"></p></div></div>
+        </section>
+      </div>
+    </section>
+    <section class="page" id="page-risk" hidden>
+      <header class="page-intro"><h1>Operational risk, made visible.</h1><p class="section-sub">Risk scores update with the current monitoring scenario.</p></header>
+      <div class="risk-kpis" id="riskKpis"></div>
+      <div class="risk-table" id="riskRows"></div>
+    </section>
+    <section class="page" id="page-data" hidden>
+      <header class="page-intro"><h1>Explore the transactions.</h1><p class="section-sub">Inspect the data behind every scenario.</p></header>
+      <div class="data-kpis" id="dataKpis"></div>
+      <section class="panel">
+        <div class="data-tools"><div class="data-tools-left"><h2>Transaction records</h2><small id="datasetName">Synthetic dataset · 500 records</small></div><div class="buttons"><button id="exportCSV" class="button primary">Download CSV</button><button id="importCSV" class="button">Import CSV</button><input id="csvFile" type="file" accept=".csv,text/csv" hidden></div></div>
+        <div class="filterbar"><input class="search" id="searchInput" placeholder="Search ID, date or country…" aria-label="Search transactions"><select id="labelFilter" class="select" aria-label="Filter by reference label"><option value="all">All labels</option><option value="suspicious">Suspicious</option><option value="not suspicious">Not suspicious</option></select></div>
+        <div class="table-wrap"><table><thead><tr><th>Transaction</th><th>Date</th><th>Amount (JOD)</th><th>Country</th><th>Score</th><th>Alert</th><th>Reference label</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+        <div class="table-foot" id="tableCount"></div>
+      </section>
+      <div class="disclaimer">Educational prototype · Synthetic transactions · Not connected to a live banking system</div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const weights=[['High-risk geography','high_risk_country',22],['Unusual amount','unusual_amount',13],['Rapid velocity','rapid_velocity',25],['New beneficiary','new_beneficiary',12],['Behavioural deviation','profile_deviation',28]];
+const presets=[{id:'baseline',name:'Baseline',desc:'Starting configuration',threshold:55,capacity:45},{id:'detection',name:'Detection first',desc:'More alerts, fewer misses',threshold:42,capacity:45},{id:'efficiency',name:'Efficiency first',desc:'Fewer alerts, more misses',threshold:75,capacity:45},{id:'pressure',name:'Capacity pressure',desc:'More queue pressure',threshold:50,capacity:28}];
+const stages=[{label:'Intake',title:'Transaction intake'},{label:'Indicators',title:'Indicator assessment'},{label:'Threshold',title:'Threshold decision'},{label:'FCI Queue',title:'FCI review queue'},{label:'Investigation',title:'Investigation'}];
+function seededRandom(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function normalize(record){const r={...record};r.amount_jod=Number(r.amount_jod);for(const [,key] of weights)r[key]=Number(r[key]);r.score=weights.reduce((sum,[,key,w])=>sum+w*r[key],0);r.reference_label=String(r.reference_label).trim().toLowerCase()==='suspicious'?'Suspicious':'Not suspicious';return r}
+function generateDataset(count=500,seed=13){const rand=seededRandom(seed),countries=['JO','AE','EG','QA','BH','PS','GB','DE','TR','SG'];return Array.from({length:count},(_,i)=>{const suspicious=rand()<.12;const bit=(yes,no)=>rand()<(suspicious?yes:no)?1:0;const row={transaction_id:'TXN-'+String(i+1).padStart(4,'0'),date:'2026-11-'+String(1+Math.floor(rand()*20)).padStart(2,'0'),amount_jod:Number((20+rand()*7800).toFixed(2)),country_code:countries[Math.floor(rand()*countries.length)],high_risk_country:bit(.62,.09),unusual_amount:bit(.56,.16),rapid_velocity:bit(.70,.12),new_beneficiary:bit(.59,.20),profile_deviation:bit(.68,.13),reference_label:suspicious?'Suspicious':'Not suspicious'};return normalize(row)})}
+const defaults={threshold:55,capacity:45};let records=generateDataset(),datasetTitle='Synthetic dataset',threshold=defaults.threshold,capacity=defaults.capacity,scenario='baseline',stage=0,selectedBin=0,page='overview';
+function fmt(n){return new Intl.NumberFormat('en-US').format(Number(n))}
+function pct(x,y){return y?((100*x)/y).toFixed(1)+'%':'0.0%'}
+function escapeHTML(x){return String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function calc(){let alerts=0,tp=0,fp=0,suspicious=0;for(const r of records){const hit=r.score>=threshold,ref=r.reference_label==='Suspicious';if(hit)alerts++;if(ref){suspicious++;if(hit)tp++}else if(hit)fp++}return{total:records.length,alerts,tp,fp,suspicious,missed:suspicious-tp,backlog:Math.max(0,alerts-capacity)}}
+function chosenRecord(){return records.find(r=>r.reference_label==='Suspicious'&&r.score>=55&&r.score<=75)||records.find(r=>r.score>=threshold)||records[0]}
+function moveTo(p){page=p;for(const key of ['overview','threshold','risk','data'])$('page-'+key).hidden=key!==p;document.querySelectorAll('.navbtn').forEach(b=>{const yes=b.dataset.page===p;b.classList.toggle('active',yes);b.setAttribute('aria-current',yes?'page':'false')});window.scrollTo?.(0,0)}
+function showToast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.classList.remove('show'),2600)}
+function renderOverview(){const r=chosenRecord();if(!r)return;const active=weights.filter(([,key])=>r[key]);const yes=r.score>=threshold;
+$('profileId').textContent=r.transaction_id;$('profileDate').textContent=r.date;$('profileAmount').textContent=fmt(r.amount_jod.toFixed(2));$('profileCountry').textContent=r.country_code;$('profileScore').textContent=r.score+' / 100';$('profileThreshold').textContent='Threshold '+threshold;
+$('profileStatus').textContent=yes?'Alert generated':'No alert';$('profileStatus').className='status '+(yes?'alert':'clear');$('profileChips').innerHTML=weights.map(([label,key])=>`<span class="chip ${r[key]?'active':''}">${escapeHTML(label)}</span>`).join('');
+$('process').innerHTML=stages.map((s,i)=>`<button class="step ${i===stage?'active':''}" data-stage="${i}" aria-pressed="${i===stage}" type="button"><span class="stepnum">${String(i+1).padStart(2,'0')}</span><span class="stepname">${s.label}</span></button>`).join('');document.querySelectorAll('.step').forEach(b=>b.onclick=()=>{stage=Number(b.dataset.stage);renderOverview()});
+const sum=calc();let line='',extras='';
+if(stage===0)line=`${r.transaction_id} enters monitoring: ${fmt(r.amount_jod.toFixed(2))} JOD, country ${r.country_code}.`;
+if(stage===1){line=`${active.length?active.map(([label])=>label).join(' + '):'No active indicators'} → ${r.score} / 100`;extras='<div class="indicator-reference">'+weights.map(([label,key,w])=>`<div class="indicator-row ${r[key]?'is-active':''}"><span class="indicator-name">${escapeHTML(label)}</span><span class="indicator-weight">+${w}</span></div>`).join('')+'</div>';}
+if(stage===2){line=`Score ${r.score} ${yes?'meets':'is below'} the threshold of ${threshold}. ${yes?'An alert is generated.':'No alert is generated.'}`;extras=`<div class="mathline"><span class="status ${yes?'alert':'clear'}">${yes?'Alert generated':'No alert'}</span></div>`}
+if(stage===3)line=yes?`The alert enters the FCI queue. ${sum.alerts} alerts compete for ${capacity} review slots; ${sum.backlog} exceed capacity.`:'No alert was generated, so this record does not enter the FCI queue.';
+if(stage===4)line=yes?'An FCI analyst reviews the alert and documents the outcome. The system does not make the final investigation decision.':'No analyst review occurs for this transaction in the current scenario.';
+$('stageContent').innerHTML=`<div class="stage-topline"><h3>${stages[stage].title}</h3><span class="section-label nowrap">${r.transaction_id}</span></div><p class="stage-main">${escapeHTML(line)}</p>${extras}`;
+}
+function setControls(t,c,id='custom'){threshold=Number(t);capacity=Number(c);scenario=id;refresh()}
+function histogramBins(){return Array.from({length:20},(_,i)=>{const lo=i*5,hi=lo+5;let below=0,above=0;for(const r of records){if(r.score>=lo&&r.score<hi){if(r.score>=threshold)above++;else below++}}return{lo,hi:hi-1,below,above,total:below+above}})}
+function drawChart(){const bins=histogramBins();selectedBin=Math.max(0,Math.min(19,selectedBin));const max=Math.max(1,...bins.map(b=>b.total));$('histogram').innerHTML=bins.map((b,i)=>{const h=b.total?Math.max(4,b.total/max*100):0;const belowPct=b.total?(b.below/b.total*100):0,abovePct=b.total?(b.above/b.total*100):0;return `<button type="button" class="bucket ${i===selectedBin?'selected':''}" data-bin="${i}" aria-label="Scores ${b.lo} through ${b.hi}: ${b.total} transactions" aria-pressed="${i===selectedBin}" title="${b.lo}–${b.hi}: ${b.total} transactions"><span class="bar" style="--height:${h}%;--low:${belowPct}%;--high:${abovePct}%"><i class="low"></i><i class="high"></i></span></button>`}).join('');$('thresholdLine').style.left=threshold+'%';$('thresholdMarker').textContent='T '+threshold;const selected=bins[selectedBin];$('bucketReadout').textContent=`${selected.lo}–${selected.hi} · ${selected.total} transactions`;
+const setBucket=i=>{selectedBin=i;const b=bins[i];$('bucketReadout').textContent=`${b.lo}–${b.hi} · ${b.total} transactions`;document.querySelectorAll('.bucket').forEach((el,n)=>{el.classList.toggle('selected',n===i);el.setAttribute('aria-pressed',n===i?'true':'false')})};
+document.querySelectorAll('.bucket').forEach(btn=>{const i=Number(btn.dataset.bin);btn.addEventListener('click',()=>setBucket(i));btn.addEventListener('mouseenter',()=>setBucket(i));btn.addEventListener('focus',()=>setBucket(i))})}
+function renderThreshold(){const s=calc();$('thresholdInput').value=String(threshold);$('capacityInput').value=String(capacity);$('thresholdValue').textContent=threshold+' / 100';$('capacityValue').textContent=capacity+' / cycle';const p=presets.find(p=>p.id===scenario);$('scenarioLabel').textContent=p?p.name:'Custom';$('presetGrid').innerHTML=presets.map(p=>`<button type="button" class="preset ${scenario===p.id?'active':''}" aria-pressed="${scenario===p.id}" data-preset="${p.id}"><b>${p.name}</b><small>${p.desc}</small></button>`).join('');document.querySelectorAll('.preset').forEach(btn=>btn.onclick=()=>{const p=presets.find(v=>v.id===btn.dataset.preset);setControls(p.threshold,p.capacity,p.id)});
+const vals=[['Alerts',s.alerts,pct(s.alerts,s.total)+' of transactions'],['False positives',s.fp,pct(s.fp,s.alerts)+' of alerts'],['Missed suspicious',s.missed,pct(s.missed,s.suspicious)+' of suspicious'],['FCI backlog',s.backlog,capacity+' slots / cycle']];$('results').innerHTML=vals.map(([k,v,desc])=>`<div class="result"><label>${k}</label><b>${fmt(v)}</b><small>${desc}</small></div>`).join('');drawChart();$('insight').textContent=s.backlog>0?`${s.alerts} alerts exceed the team's review capacity by ${s.backlog}. More sensitive monitoring can create a workload problem.`:s.missed>0?`${s.missed} suspicious records are missed at this threshold. Lowering it may improve coverage, but can increase false positives.`:'All labelled suspicious records generated alerts. Consider the false-positive workload before changing settings.'}
+function riskData(s){const clamp=n=>Math.max(1,Math.min(5,n)),frac=s.alerts?s.fp/s.alerts:0,miss=s.suspicious?s.missed/s.suspicious:0,load=s.alerts/Math.max(1,capacity);return[
+{name:'Excessive false positives',why:'Review effort spent on non-suspicious alerts',likelihood:clamp(Math.ceil(frac*10)),impact:3,owner:'AML Monitoring Lead',mitigation:'Sample alerts and validate calibration'},
+{name:'Missed suspicious activity',why:'Suspicious records produce no alert',likelihood:clamp(Math.ceil(miss*5)),impact:5,owner:'Financial Crime Compliance',mitigation:'Test missed cases and monitoring coverage'},
+{name:'FCI capacity overload',why:'Review demand exceeds available slots',likelihood:clamp(Math.ceil(load*3)),impact:4,owner:'FCI Operations Manager',mitigation:'Reallocate capacity and escalate backlogs'},
+{name:'Uncontrolled threshold changes',why:'Sensitivity changes without oversight',likelihood:clamp(Math.ceil(Math.abs(threshold-55)/30*4)+1),impact:4,owner:'AML Governance',mitigation:'Approve, test and log changes'}].map(r=>({...r,score:r.likelihood*r.impact}))}
+function kpi(label,value,sub){return `<div class="kpi"><label>${label}</label><strong>${fmt(value)}</strong><small>${sub}</small></div>`}
+function renderRisk(){const list=riskData(calc()),s=calc();$('riskKpis').innerHTML=kpi('Risks assessed',4,'Operational categories')+kpi('High / critical',list.filter(r=>r.score>=15).length,'Score 15 or higher')+kpi('Highest score',Math.max(...list.map(r=>r.score)),'5 × 5 matrix')+kpi('Alert backlog',s.backlog,'Above review capacity');$('riskRows').innerHTML=`<div class="risk-row head"><div>Risk</div><div>Likelihood</div><div>Impact</div><div>Risk level</div><div>Owner / action</div></div>`+list.map(r=>{const level=r.score>=15?'high':r.score>=5?'moderate':'low';return `<div class="risk-row"><div><span class="name">${r.name}</span>${r.why}</div><div>${r.likelihood} / 5</div><div>${r.impact} / 5</div><div><span class="risk-tag ${level}">${r.score} · ${level==='high'?'High':level==='moderate'?'Moderate':'Low'}</span></div><div><span class="risk-owner">${r.owner}</span>${r.mitigation}</div></div>`}).join('')}
+function renderData(){const s=calc();$('dataKpis').innerHTML=kpi('Records',s.total,'Current dataset')+kpi('Suspicious label',s.suspicious,'Synthetic reference')+kpi('Threshold',threshold,'Out of 100')+kpi('Alerts',s.alerts,'At current threshold');$('datasetName').textContent=datasetTitle+' · '+fmt(records.length)+' records';const text=$('searchInput').value.toLowerCase().trim(),label=$('labelFilter').value;let filterLabel=label;if(label==='all'){if(text==='suspicious')filterLabel='suspicious';else if(text==='not suspicious')filterLabel='not suspicious'}const searchByText=['suspicious','not suspicious'].includes(text)&&label==='all'?'':text;const matches=records.filter(r=>(filterLabel==='all'||r.reference_label.toLowerCase()===filterLabel)&&(!searchByText||[r.transaction_id,r.date,r.country_code].some(v=>String(v).toLowerCase().includes(searchByText))));$('tableBody').innerHTML=matches.slice(0,24).map(r=>`<tr><td>${escapeHTML(r.transaction_id)}</td><td>${escapeHTML(r.date)}</td><td>${fmt(r.amount_jod.toFixed(2))}</td><td>${escapeHTML(r.country_code)}</td><td>${r.score}</td><td><span class="status ${r.score>=threshold?'alert':'clear'}">${r.score>=threshold?'Yes':'No'}</span></td><td>${escapeHTML(r.reference_label)}</td></tr>`).join('')||'<tr><td colspan="7">No matching transactions</td></tr>';$('tableCount').textContent='Showing '+Math.min(24,matches.length)+' of '+fmt(matches.length)+' matching transactions';}
+function refresh(){renderOverview();renderThreshold();renderRisk();renderData()}
+function csvString(rows){const fields=['transaction_id','date','amount_jod','country_code','high_risk_country','unusual_amount','rapid_velocity','new_beneficiary','profile_deviation','score','reference_label'];return[fields.join(','),...rows.map(r=>fields.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n')}
+function downloadCSV(){const blob=new Blob(['\ufeff'+csvString(records)],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download='aml-operations-transactions.csv';document.body.appendChild(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);showToast('CSV dataset downloaded')}
+function parseCSV(text){let lines=[],row=[],field='',inQuote=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(inQuote&&text[i+1]==='"'){field+='"';i++}else inQuote=!inQuote}else if(c===','&&!inQuote){row.push(field);field=''}else if((c==='\n'||c==='\r')&&!inQuote){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x.trim()))lines.push(row);row=[];field=''}else field+=c}if(inQuote)throw Error('CSV has an unclosed quote');row.push(field);if(row.some(x=>x.trim()))lines.push(row);if(lines.length<2)throw Error('CSV has no records');const headers=lines.shift().map(h=>h.replace(/^\ufeff/,'').trim());return lines.map(row=>Object.fromEntries(headers.map((h,i)=>[h,row[i]??''])))}
+function validateCSV(rows){if(rows.length>20000)throw Error('Maximum 20,000 records');const cols=['transaction_id','date','amount_jod','country_code',...weights.map(([,k])=>k),'reference_label'];return rows.map(r=>{for(const c of cols)if(!(c in r))throw Error('Missing column: '+c);for(const c of ['transaction_id','date','country_code'])if(!String(r[c]).trim())throw Error('Blank '+c);if(!Number.isFinite(Number(r.amount_jod))||Number(r.amount_jod)<0)throw Error('Invalid amount');for(const [,key] of weights)if(!['0','1'].includes(String(r[key]).trim()))throw Error('Indicators must be 0 or 1');if(!/^(Suspicious|Not suspicious)$/i.test(String(r.reference_label).trim()))throw Error('Invalid label');return normalize(r)})}
+function resetEverything(){records=generateDataset();datasetTitle='Synthetic dataset';threshold=55;capacity=45;scenario='baseline';stage=0;selectedBin=0;$('searchInput').value='';$('labelFilter').value='all';moveTo('overview');refresh();showToast('Model reset to baseline')}
+document.querySelectorAll('.navbtn').forEach(btn=>btn.addEventListener('click',()=>moveTo(btn.dataset.page)));
+$('resetAll').addEventListener('click',resetEverything);
+$('themeToggle').addEventListener('click',()=>{const html=document.documentElement;html.dataset.theme=html.dataset.theme==='light'?'dark':'light';$('themeToggle').textContent=html.dataset.theme==='light'?'☾':'☼'});
+$('thresholdInput').addEventListener('input',e=>setControls(e.target.value,capacity));
+$('capacityInput').addEventListener('input',e=>setControls(threshold,e.target.value));
+$('searchInput').addEventListener('input',renderData);$('labelFilter').addEventListener('change',renderData);
+$('exportCSV').addEventListener('click',downloadCSV);
+$('importCSV').addEventListener('click',()=>$('csvFile').click());
+$('csvFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const imported=validateCSV(parseCSV(await file.text()));records=imported;datasetTitle=file.name;stage=0;selectedBin=0;refresh();showToast('Loaded '+fmt(records.length)+' records')}catch(err){showToast('Import failed: '+err.message)}e.target.value=''});
+refresh();
+</script>
+</body>
+</html>
